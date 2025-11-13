@@ -192,7 +192,7 @@ const deletingId = ref<string | null>(null)
 
 // Règles de validation
 const rules = {
-    required: (value: any) => !!value || 'Ce champ est requis',
+    required: (value: unknown) => !!value || 'Ce champ est requis',
     positive: (value: number) => value > 0 || 'La quantité doit être positive'
 }
 
@@ -225,8 +225,8 @@ const handleSubmit = async () => {
 
         // Rafraîchir la liste
         await refreshList()
-    } catch (error) {
-        // L'erreur est déjà gérée par le composable avec le toast
+    } catch (error: unknown) {
+        console.error(error)
     }
 }
 
@@ -254,7 +254,8 @@ const handleUpdate = async () => {
 
         editDialog.value = false
         await refreshList()
-    } catch (error) {
+    } catch (error: unknown) {
+        console.error(error)
         // L'erreur est déjà gérée par le composable avec le toast
     }
 }
@@ -270,7 +271,8 @@ const handleDelete = async (id: string) => {
         await refreshList()
         // Retirer de la sélection si présent
         selectedItems.value = selectedItems.value.filter(itemId => itemId !== id)
-    } catch (error) {
+    } catch (error: unknown) {
+        console.error(error)
         // L'erreur est déjà gérée par le composable avec le toast
     } finally {
         deletingId.value = null
@@ -291,7 +293,8 @@ const handleDeleteSelected = async () => {
         )
         selectedItems.value = []
         await refreshList()
-    } catch (error) {
+    } catch (error: unknown) {
+        console.error(error)
         // L'erreur est déjà gérée par le composable avec le toast
     }
 }
