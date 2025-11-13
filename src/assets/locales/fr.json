@@ -1,0 +1,27 @@
+{
+  "base": {
+    "toast": {
+      "error": "Une erreur est survenue. Veuillez recharger la page.",
+      "warning": "Attention !",
+      "success": "Succès."
+    },
+    "datepicker": {
+      "single": "Sélectionner une date",
+      "range": "Sélectionner un intervalle de date",
+      "apply": "Appliquer",
+      "input": {
+        "multiple": "Du {start} au {end}"
+      }
+    },
+    "filters": {
+      "toolbarBtn": {
+        "active": "Filtres Actifs",
+        "inactive": "Filtrer"
+      }
+    },
+    "error": "Erreur",
+    "AppPagination": {
+      "result": "Aucun résultat | Total {count} | Total {count}"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+@keyframes popIn {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(0.96);
+  }
+}
+
+@keyframes halfRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(30deg);
+  }
+  75% {
+    transform: rotate(150deg);
+  }
+  100% {
+    transform: rotate(180deg);
+  }
+}
+
+.no-anim {
+  &::after,
+  &::before {
+    display: none;
+  }
+}

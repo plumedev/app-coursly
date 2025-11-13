@@ -1,0 +1,23 @@
+/* Complète les class de sizing de Vuetify */
+@for $i from 0 through 100 {
+  $percent: "%";
+  .w-#{$i} {
+    width: #{$i}#{$percent};
+  }
+  .h-#{$i} {
+    width: #{$i}#{$percent};
+  }
+}
+
+/* Complète les class de border-radius de Vuetify */
+/* Fonctionne comme les padding/margin de Vuetify */
+@for $i from 0 through 16 {
+  $pixel: "px";
+  .rounded-#{$i} {
+    border-radius: #{$i * 4}#{$pixel};
+  }
+}
+
+.z-index-max {
+  z-index: 10000;
+}
