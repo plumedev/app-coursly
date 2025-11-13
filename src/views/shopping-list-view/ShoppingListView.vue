@@ -136,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { mdiPlus, mdiPencil, mdiDelete, mdiRefresh } from '@mdi/js'
 import type { IShoppingItem, ICreateShoppingItem, IUpdateShoppingItem } from '@/interfaces/IShoppingItem'
 import { useCreateShoppingItem } from '@/composables/shopping/useCreateShoppingItem'
@@ -166,7 +166,6 @@ const selectedItems = ref<string[]>([])
 
 // Composables
 const {
-    data: createdItem,
     isLoading: isCreating,
     doRequest: createItem
 } = useCreateShoppingItem()
@@ -180,7 +179,6 @@ const {
 } = useReadShoppingItems()
 
 const {
-    data: updatedItem,
     isLoading: isUpdating,
     doRequest: updateItem
 } = useUpdateShoppingItem()
