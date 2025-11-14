@@ -16,10 +16,19 @@ import {
 const COLLECTION_NAME = 'shoppingItems'
 
 /**
+/**
+/**
  * Convertit un document Firestore en IShoppingItem
  */
-const convertFirestoreItem = (doc: any): IShoppingItem => {
-  const data = doc.data()
+const convertFirestoreItem = (doc: import('firebase/firestore').DocumentSnapshot): IShoppingItem => {
+  const data = doc.data() as {
+    name: string
+    quantity: number
+    unit?: string
+    checked?: boolean
+    createdAt?: { toDate: () => Date }
+    updatedAt?: { toDate: () => Date }
+  }
   return {
     id: doc.id,
     name: data.name,
@@ -67,7 +76,7 @@ export const getShoppingItems = async (): Promise<IShoppingItem[]> => {
  */
 export const updateShoppingItem = async (item: IUpdateShoppingItem): Promise<IShoppingItem> => {
   const itemRef = doc(db, COLLECTION_NAME, item.id)
-  const updateData: any = {
+  const updateData: Record<string, unknown> = {
     updatedAt: Timestamp.now()
   }
 
