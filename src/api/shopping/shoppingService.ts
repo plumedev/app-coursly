@@ -1,6 +1,17 @@
 import { db } from '@/config/firebase'
 import type { ICreateShoppingItem, IShoppingItem, IUpdateShoppingItem } from '@/interfaces/IShoppingItem'
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, updateDoc, Timestamp } from 'firebase/firestore'
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  updateDoc,
+  Timestamp,
+  onSnapshot,
+  setDoc
+} from 'firebase/firestore'
 
 const COLLECTION_NAME = 'shoppingItems'
 
@@ -14,6 +25,7 @@ const convertFirestoreItem = (doc: any): IShoppingItem => {
     name: data.name,
     quantity: data.quantity,
     unit: data.unit || undefined,
+    checked: data.checked || false,
     createdAt: data.createdAt?.toDate() || new Date(),
     updatedAt: data.updatedAt?.toDate() || new Date()
   }
@@ -62,6 +74,7 @@ export const updateShoppingItem = async (item: IUpdateShoppingItem): Promise<ISh
   if (item.name !== undefined) updateData.name = item.name
   if (item.quantity !== undefined) updateData.quantity = item.quantity
   if (item.unit !== undefined) updateData.unit = item.unit || null
+  if (item.checked !== undefined) updateData.checked = item.checked
 
   await updateDoc(itemRef, updateData)
 
@@ -81,4 +94,75 @@ export const updateShoppingItem = async (item: IUpdateShoppingItem): Promise<ISh
 export const deleteShoppingItem = async (id: string): Promise<void> => {
   const itemRef = doc(db, COLLECTION_NAME, id)
   await deleteDoc(itemRef)
+}
+
+/**
+ * Écoute les changements en temps réel sur la collection shoppingItems
+ */
+export const subscribeToShoppingItems = (callback: (items: IShoppingItem[]) => void): (() => void) => {
+  return onSnapshot(
+    collection(db, COLLECTION_NAME),
+    (querySnapshot) => {
+      const items = querySnapshot.docs.map((doc) => convertFirestoreItem(doc))
+      callback(items)
+    },
+    (error) => {
+      console.error("Erreur lors de l'écoute des items:", error)
+    }
+  )
+}
+
+/**
+ * Marque un item comme récupéré ou non récupéré
+ */
+export const toggleItemChecked = async (id: string, checked: boolean): Promise<IShoppingItem> => {
+  return updateShoppingItem({ id, checked })
+}
+
+// Collection pour l'état du mode courses
+const SHOPPING_MODE_COLLECTION = 'shoppingMode'
+const SHOPPING_MODE_DOC_ID = 'current'
+
+/**
+ * Active ou désactive le mode courses
+ */
+export const setShoppingMode = async (isActive: boolean): Promise<void> => {
+  const modeRef = doc(db, SHOPPING_MODE_COLLECTION, SHOPPING_MODE_DOC_ID)
+  await setDoc(modeRef, { isActive, updatedAt: Timestamp.now() }, { merge: true })
+}
+
+/**
+ * Récupère l'état actuel du mode courses
+ */
+export const getShoppingMode = async (): Promise<boolean> => {
+  const modeRef = doc(db, SHOPPING_MODE_COLLECTION, SHOPPING_MODE_DOC_ID)
+  const modeSnapshot = await getDoc(modeRef)
+
+  if (!modeSnapshot.exists()) {
+    return false
+  }
+
+  return modeSnapshot.data().isActive || false
+}
+
+/**
+ * Écoute les changements en temps réel sur l'état du mode courses
+ */
+export const subscribeToShoppingMode = (callback: (isActive: boolean) => void): (() => void) => {
+  const modeRef = doc(db, SHOPPING_MODE_COLLECTION, SHOPPING_MODE_DOC_ID)
+
+  return onSnapshot(
+    modeRef,
+    (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        callback(docSnapshot.data().isActive || false)
+      } else {
+        callback(false)
+      }
+    },
+    (error) => {
+      console.error("Erreur lors de l'écoute du mode courses:", error)
+      callback(false)
+    }
+  )
 }

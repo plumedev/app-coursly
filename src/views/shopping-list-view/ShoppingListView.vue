@@ -7,95 +7,198 @@
                         Liste de Courses
                     </v-card-title>
 
-                    <!-- Formulaire d'ajout -->
-                    <v-card-subtitle class="text-h6 mb-4">
-                        Ajouter un produit
-                    </v-card-subtitle>
-
-                    <v-form @submit.prevent="handleSubmit" ref="formRef">
-                        <v-row>
-                            <v-col cols="12" md="5">
-                                <v-text-field v-model="form.name" label="Nom du produit" :rules="[rules.required]"
-                                    variant="outlined" density="comfortable" required />
-                            </v-col>
-                            <v-col cols="12" md="3">
-                                <v-text-field v-model.number="form.quantity" label="Quantité" type="number"
-                                    :rules="[rules.required, rules.positive]" variant="outlined" density="comfortable"
-                                    required />
-                            </v-col>
-                            <v-col cols="12" md="4">
-                                <v-text-field v-model="form.unit" label="Unité (optionnel)"
-                                    placeholder="kg, g, L, ml, unité..." variant="outlined" density="comfortable"
-                                    hint="Ex: kg, g, L, ml, unité" persistent-hint />
-                            </v-col>
-                        </v-row>
-
-                        <v-btn type="submit" :loading="isCreating" color="primary" size="large" block class="mb-6"
-                            :prepend-icon="mdiPlus">
-                            Ajouter
+                    <!-- Bouton pour démarrer/arrêter le mode courses -->
+                    <div class="text-center mb-6">
+                        <v-btn 
+                            :color="isShoppingModeActive ? 'error' : 'success'" 
+                            size="large" 
+                            :prepend-icon="isShoppingModeActive ? mdiStop : mdiCart"
+                            @click="handleToggleShoppingMode"
+                            :loading="isTogglingMode"
+                        >
+                            {{ isShoppingModeActive ? 'Arrêter les courses' : 'Démarrer les courses' }}
                         </v-btn>
-                    </v-form>
+                        <v-chip 
+                            v-if="isShoppingModeActive" 
+                            color="success" 
+                            size="small" 
+                            class="ml-2"
+                        >
+                            Mode courses actif
+                        </v-chip>
+                    </div>
 
                     <v-divider class="mb-6" />
 
-                    <!-- Liste des produits -->
-                    <v-card-subtitle class="text-h6 mb-4">
-                        Produits à acheter
-                        <v-chip v-if="items && items.length > 0" color="primary" size="small" class="ml-2">
-                            {{ items.length }}
-                        </v-chip>
-                    </v-card-subtitle>
+                    <!-- Mode normal : Formulaire d'ajout et édition -->
+                    <template v-if="!isShoppingModeActive">
+                        <v-card-subtitle class="text-h6 mb-4">
+                            Ajouter un produit
+                        </v-card-subtitle>
 
-                    <v-progress-linear v-if="isLoading" indeterminate color="primary" class="mb-4" />
+                        <v-form @submit.prevent="handleSubmit" ref="formRef">
+                            <v-row>
+                                <v-col cols="12" md="5">
+                                    <v-text-field v-model="form.name" label="Nom du produit" :rules="[rules.required]"
+                                        variant="outlined" density="comfortable" required />
+                                </v-col>
+                                <v-col cols="12" md="3">
+                                    <v-text-field v-model.number="form.quantity" label="Quantité" type="number"
+                                        :rules="[rules.required, rules.positive]" variant="outlined" density="comfortable"
+                                        required />
+                                </v-col>
+                                <v-col cols="12" md="4">
+                                    <v-text-field v-model="form.unit" label="Unité (optionnel)"
+                                        placeholder="kg, g, L, ml, unité..." variant="outlined" density="comfortable"
+                                        hint="Ex: kg, g, L, ml, unité" persistent-hint />
+                                </v-col>
+                            </v-row>
 
-                    <v-alert v-if="isError" type="error" class="mb-4">
-                        {{ errorMessage }}
-                    </v-alert>
+                            <v-btn type="submit" :loading="isCreating" color="primary" size="large" block class="mb-6"
+                                :prepend-icon="mdiPlus">
+                                Ajouter
+                            </v-btn>
+                        </v-form>
 
-                    <v-alert v-if="!isLoading && (!items || items.length === 0)" type="info" variant="tonal"
-                        class="mb-4">
-                        Aucun produit dans la liste. Ajoutez-en un pour commencer !
-                    </v-alert>
+                        <v-divider class="mb-6" />
 
-                    <v-list v-if="items && items.length > 0" lines="two" class="mb-4">
-                        <v-list-item v-for="item in items" :key="item.id" class="mb-2">
-                            <template v-slot:prepend>
-                                <v-checkbox v-model="selectedItems" :value="item.id" color="primary" hide-details />
-                            </template>
+                        <!-- Liste des produits (mode normal) -->
+                        <v-card-subtitle class="text-h6 mb-4">
+                            Produits à acheter
+                            <v-chip v-if="items && items.length > 0" color="primary" size="small" class="ml-2">
+                                {{ items.length }}
+                            </v-chip>
+                        </v-card-subtitle>
 
-                            <v-list-item-title class="text-h6">
-                                {{ item.name }}
-                            </v-list-item-title>
+                        <v-progress-linear v-if="isLoading" indeterminate color="primary" class="mb-4" />
 
-                            <v-list-item-subtitle>
-                                {{ formatQuantity(item) }}
-                            </v-list-item-subtitle>
+                        <v-alert v-if="isError" type="error" class="mb-4">
+                            {{ errorMessage }}
+                        </v-alert>
 
-                            <template v-slot:append>
-                                <v-btn icon variant="text" size="small" @click="startEdit(item)"
-                                    :prepend-icon="mdiPencil">
-                                    <v-icon>{{ mdiPencil }}</v-icon>
-                                </v-btn>
-                                <v-btn icon variant="text" size="small" color="error" @click="handleDelete(item.id)"
-                                    :loading="deletingId === item.id">
-                                    <v-icon>{{ mdiDelete }}</v-icon>
-                                </v-btn>
-                            </template>
-                        </v-list-item>
-                    </v-list>
+                        <v-alert v-if="!isLoading && (!items || items.length === 0)" type="info" variant="tonal"
+                            class="mb-4">
+                            Aucun produit dans la liste. Ajoutez-en un pour commencer !
+                        </v-alert>
 
-                    <!-- Bouton supprimer sélectionnés -->
-                    <v-btn v-if="selectedItems.length > 0" color="error" variant="outlined"
-                        @click="handleDeleteSelected" :loading="isDeleting" block class="mb-2"
-                        :prepend-icon="mdiDelete">
-                        Supprimer {{ selectedItems.length }} produit(s) sélectionné(s)
-                    </v-btn>
+                        <v-list v-if="items && items.length > 0" lines="two" class="mb-4">
+                            <v-list-item v-for="item in items" :key="item.id" class="mb-2">
+                                <template v-slot:prepend>
+                                    <v-checkbox v-model="selectedItems" :value="item.id" color="primary" hide-details />
+                                </template>
 
-                    <!-- Bouton recharger -->
-                    <v-btn color="primary" variant="outlined" @click="refreshList" :loading="isLoading" block
-                        :prepend-icon="mdiRefresh">
-                        Actualiser la liste
-                    </v-btn>
+                                <v-list-item-title class="text-h6">
+                                    {{ item.name }}
+                                </v-list-item-title>
+
+                                <v-list-item-subtitle>
+                                    {{ formatQuantity(item) }}
+                                </v-list-item-subtitle>
+
+                                <template v-slot:append>
+                                    <v-btn icon variant="text" size="small" @click="startEdit(item)"
+                                        :prepend-icon="mdiPencil">
+                                        <v-icon>{{ mdiPencil }}</v-icon>
+                                    </v-btn>
+                                    <v-btn icon variant="text" size="small" color="error" @click="handleDelete(item.id)"
+                                        :loading="deletingId === item.id">
+                                        <v-icon>{{ mdiDelete }}</v-icon>
+                                    </v-btn>
+                                </template>
+                            </v-list-item>
+                        </v-list>
+
+                        <!-- Bouton supprimer sélectionnés -->
+                        <v-btn v-if="selectedItems.length > 0" color="error" variant="outlined"
+                            @click="handleDeleteSelected" :loading="isDeleting" block class="mb-2"
+                            :prepend-icon="mdiDelete">
+                            Supprimer {{ selectedItems.length }} produit(s) sélectionné(s)
+                        </v-btn>
+                    </template>
+
+                    <!-- Mode courses : Liste non éditable avec coches -->
+                    <template v-else>
+                        <v-card-subtitle class="text-h6 mb-4">
+                            Produits à récupérer
+                            <v-chip v-if="uncheckedItems.length > 0" color="primary" size="small" class="ml-2">
+                                {{ uncheckedItems.length }}
+                            </v-chip>
+                        </v-card-subtitle>
+
+                        <v-progress-linear v-if="isLoading" indeterminate color="primary" class="mb-4" />
+
+                        <v-alert v-if="isError" type="error" class="mb-4">
+                            {{ errorMessage }}
+                        </v-alert>
+
+                        <v-alert v-if="!isLoading && uncheckedItems.length === 0 && checkedItems.length === 0" 
+                            type="info" variant="tonal" class="mb-4">
+                            Aucun produit dans la liste.
+                        </v-alert>
+
+                        <!-- Liste des produits non récupérés -->
+                        <v-list v-if="uncheckedItems.length > 0" lines="two" class="mb-4">
+                            <v-list-item v-for="item in uncheckedItems" :key="item.id" class="mb-2">
+                                <template v-slot:prepend>
+                                    <v-checkbox 
+                                        :model-value="item.checked || false"
+                                        @update:model-value="handleToggleChecked(item.id, $event)"
+                                        color="success" 
+                                        hide-details 
+                                    />
+                                </template>
+
+                                <v-list-item-title class="text-h6">
+                                    {{ item.name }}
+                                </v-list-item-title>
+
+                                <v-list-item-subtitle>
+                                    {{ formatQuantity(item) }}
+                                </v-list-item-subtitle>
+                            </v-list-item>
+                        </v-list>
+
+                        <v-alert v-if="uncheckedItems.length === 0 && checkedItems.length > 0" 
+                            type="success" variant="tonal" class="mb-4">
+                            Tous les produits ont été récupérés ! 🎉
+                        </v-alert>
+
+                        <!-- Liste des produits récupérés (en bas, en vert) -->
+                        <v-divider v-if="checkedItems.length > 0" class="mb-4" />
+
+                        <v-card-subtitle v-if="checkedItems.length > 0" class="text-h6 mb-4 text-success">
+                            Produits récupérés
+                            <v-chip color="success" size="small" class="ml-2">
+                                {{ checkedItems.length }}
+                            </v-chip>
+                        </v-card-subtitle>
+
+                        <v-list v-if="checkedItems.length > 0" lines="two" class="mb-4">
+                            <v-list-item 
+                                v-for="item in checkedItems" 
+                                :key="item.id" 
+                                class="mb-2"
+                                style="background-color: rgba(76, 175, 80, 0.1); border-radius: 8px;"
+                            >
+                                <template v-slot:prepend>
+                                    <v-checkbox 
+                                        :model-value="true"
+                                        @update:model-value="handleToggleChecked(item.id, false)"
+                                        color="success" 
+                                        hide-details 
+                                    />
+                                </template>
+
+                                <v-list-item-title class="text-h6 text-success">
+                                    {{ item.name }}
+                                </v-list-item-title>
+
+                                <v-list-item-subtitle>
+                                    {{ formatQuantity(item) }}
+                                </v-list-item-subtitle>
+                            </v-list-item>
+                        </v-list>
+                    </template>
                 </v-card>
             </v-col>
         </v-row>
@@ -136,13 +239,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { mdiPlus, mdiPencil, mdiDelete, mdiRefresh } from '@mdi/js'
+import { ref, computed, onMounted } from 'vue'
+import { mdiPlus, mdiPencil, mdiDelete, mdiRefresh, mdiCart, mdiStop } from '@mdi/js'
 import type { IShoppingItem, ICreateShoppingItem, IUpdateShoppingItem } from '@/interfaces/IShoppingItem'
 import { useCreateShoppingItem } from '@/composables/shopping/useCreateShoppingItem'
-import { useReadShoppingItems } from '@/composables/shopping/useReadShoppingItems'
+import { useSubscribeToShoppingItems } from '@/composables/shopping/useSubscribeToShoppingItems'
 import { useUpdateShoppingItem } from '@/composables/shopping/useUpdateShoppingItem'
 import { useDeleteShoppingItem } from '@/composables/shopping/useDeleteShoppingItem'
+import { useShoppingMode } from '@/composables/shopping/useShoppingMode'
+import { useToggleItemChecked } from '@/composables/shopping/useToggleItemChecked'
 
 // Formulaires
 const formRef = ref()
@@ -170,13 +275,13 @@ const {
     doRequest: createItem
 } = useCreateShoppingItem()
 
+// Utiliser le composable en temps réel pour les items
 const {
-    data: items,
+    items,
     isLoading,
     isError,
-    errorMessage,
-    doRequest: fetchItems
-} = useReadShoppingItems()
+    errorMessage
+} = useSubscribeToShoppingItems()
 
 const {
     isLoading: isUpdating,
@@ -188,7 +293,35 @@ const {
     doRequest: deleteItem
 } = useDeleteShoppingItem()
 
+const {
+    isShoppingModeActive,
+    toggleShoppingMode
+} = useShoppingMode()
+
+const {
+    isLoading: isTogglingChecked,
+    doRequest: toggleChecked
+} = useToggleItemChecked()
+
+const isTogglingMode = ref(false)
+
 const deletingId = ref<string | null>(null)
+
+// Computed pour séparer les items récupérés et non récupérés
+const uncheckedItems = computed(() => {
+    return items.value
+        .filter(item => !item.checked)
+        .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+})
+
+const checkedItems = computed(() => {
+    return items.value
+        .filter(item => item.checked)
+        .sort((a, b) => {
+            // Trier par updatedAt décroissant pour que les plus récemment cochés soient en haut
+            return b.updatedAt.getTime() - a.updatedAt.getTime()
+        })
+})
 
 // Règles de validation
 const rules = {
@@ -222,9 +355,25 @@ const handleSubmit = async () => {
             unit: ''
         }
         formRef.value.resetValidation()
+    } catch (error: unknown) {
+        console.error(error)
+    }
+}
 
-        // Rafraîchir la liste
-        await refreshList()
+const handleToggleShoppingMode = async () => {
+    try {
+        isTogglingMode.value = true
+        await toggleShoppingMode(!isShoppingModeActive.value)
+    } catch (error: unknown) {
+        console.error(error)
+    } finally {
+        isTogglingMode.value = false
+    }
+}
+
+const handleToggleChecked = async (id: string, checked: boolean) => {
+    try {
+        await toggleChecked({ id, checked })
     } catch (error: unknown) {
         console.error(error)
     }
@@ -253,10 +402,8 @@ const handleUpdate = async () => {
         })
 
         editDialog.value = false
-        await refreshList()
     } catch (error: unknown) {
         console.error(error)
-        // L'erreur est déjà gérée par le composable avec le toast
     }
 }
 
@@ -268,12 +415,10 @@ const handleDelete = async (id: string) => {
     try {
         deletingId.value = id
         await deleteItem(id)
-        await refreshList()
         // Retirer de la sélection si présent
         selectedItems.value = selectedItems.value.filter(itemId => itemId !== id)
     } catch (error: unknown) {
         console.error(error)
-        // L'erreur est déjà gérée par le composable avec le toast
     } finally {
         deletingId.value = null
     }
@@ -292,19 +437,8 @@ const handleDeleteSelected = async () => {
             selectedItems.value.map(id => deleteItem(id))
         )
         selectedItems.value = []
-        await refreshList()
     } catch (error: unknown) {
         console.error(error)
-        // L'erreur est déjà gérée par le composable avec le toast
     }
 }
-
-const refreshList = async () => {
-    await fetchItems()
-}
-
-// Charger la liste au montage
-onMounted(() => {
-    refreshList()
-})
 </script>

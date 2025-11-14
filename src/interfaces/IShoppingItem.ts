@@ -3,6 +3,7 @@ export interface IShoppingItem {
   name: string
   quantity: number
   unit?: string // Optionnel : "kg", "g", "L", "ml", "unité", etc.
+  checked?: boolean // Indique si le produit a été récupéré en magasin
   createdAt: Date
   updatedAt: Date
 }
@@ -20,4 +21,5 @@ export interface IUpdateShoppingItem {
   name?: string
   quantity?: number
   unit?: string
+  checked?: boolean
 }
