@@ -11,13 +11,6 @@ declare module 'vue-router' {
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    name: RouteName.ROOT,
-    redirect: {
-      name: RouteName.SHOPPING_LIST
-    }
-  },
-  {
-    path: '/shopping-list',
     name: RouteName.SHOPPING_LIST,
     component: () => import('@/views/shopping-list-view/ShoppingListView.vue'),
     meta: {
