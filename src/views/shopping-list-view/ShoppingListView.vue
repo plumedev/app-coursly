@@ -219,6 +219,13 @@
                     </div>
                   </template>
                 </template>
+
+                <!-- Bouton supprimer la liste en bas -->
+                <v-divider class="mt-6 mb-4" />
+                <v-btn color="error" variant="tonal" block size="large" :prepend-icon="mdiDelete"
+                  @click="showDeleteDialog = true" rounded="lg">
+                  Supprimer cette liste
+                </v-btn>
               </v-card>
             </v-col>
           </v-row>
@@ -263,6 +270,39 @@
       </v-card>
     </v-dialog>
 
+    <!-- Dialog pour supprimer la liste -->
+    <v-dialog v-model="showDeleteDialog" max-width="400" persistent>
+      <v-card rounded="xl">
+        <v-card-title class="text-h5 font-weight-bold pa-6 pb-4">
+          🗑️ Supprimer la liste
+        </v-card-title>
+
+        <v-divider />
+
+        <v-card-text class="pa-6">
+          <p class="text-body-1">
+            Êtes-vous sûr de vouloir supprimer la liste <strong>"{{ activeList?.name }}"</strong> ?
+          </p>
+          <p class="text-body-2 text-medium-emphasis mt-2">
+            Cette action est irréversible. Tous les produits de cette liste seront également supprimés.
+          </p>
+        </v-card-text>
+
+        <v-divider />
+
+        <v-card-actions class="pa-6">
+          <v-spacer />
+          <v-btn variant="text" @click="showDeleteDialog = false" rounded="lg">
+            Annuler
+          </v-btn>
+          <v-btn color="error" @click="handleDeleteList" :loading="isDeletingList" rounded="lg" variant="flat"
+            :prepend-icon="mdiDelete">
+            Supprimer
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Navbar fixe en bas -->
     <ShoppingListNavbar />
   </v-container>
@@ -279,6 +319,7 @@ import {
   mdiWeatherSunny,
   mdiWeatherNight
 } from '@mdi/js'
+import { useDeleteShoppingList } from '@/composables/shopping/useDeleteShoppingList'
 import type {
   IShoppingItem,
   ICreateShoppingItem,
@@ -360,6 +401,9 @@ const editForm = ref<IUpdateShoppingItem>({
 // Sélection multiple
 const selectedItems = ref<string[]>([])
 
+// Dialog de suppression de liste
+const showDeleteDialog = ref(false)
+
 // Composables
 const {
   isLoading: isCreating,
@@ -383,6 +427,11 @@ const {
   isLoading: isDeleting,
   doRequest: deleteItem
 } = useDeleteShoppingItem()
+
+const {
+  isLoading: isDeletingList,
+  doRequest: deleteList
+} = useDeleteShoppingList()
 
 const {
   isShoppingModeActive,
@@ -544,6 +593,21 @@ const handleDeleteSelected = async () => {
     // Supprimer tous les items sélectionnés
     await Promise.all(selectedItems.value.map(id => deleteItem(id)))
     selectedItems.value = []
+  } catch (error: unknown) {
+    console.error(error)
+  }
+}
+
+const handleDeleteList = async () => {
+  if (!activeListId.value) return
+
+  try {
+    await deleteList(activeListId.value)
+
+    // Si la liste supprimée était active, le store gérera automatiquement la sélection
+    // grâce à la fonction setLists qui vérifie si la liste active existe toujours
+
+    showDeleteDialog.value = false
   } catch (error: unknown) {
     console.error(error)
   }
