@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="fill-height pa-0" style="padding-bottom: 80px;">
+  <v-container fluid class="fill-height pa-0" style="padding-bottom: 160px;">
     <v-row no-gutters class="fill-height">
       <v-col cols="12">
         <v-container class="pa-4">
@@ -24,7 +24,7 @@
               </v-alert>
 
               <!-- Carte principale avec design moderne -->
-              <v-card v-if="activeListId" class="pa-6" elevation="2" rounded="xl"
+              <v-card v-if="activeListId" class="pa-6 mb-16" elevation="2" rounded="xl"
                 style="backdrop-filter: blur(10px); transition: all 0.3s ease;">
                 <!-- Section mode courses avec design amélioré -->
                 <div class="d-flex align-center justify-space-between mb-6 flex-wrap gap-3">
