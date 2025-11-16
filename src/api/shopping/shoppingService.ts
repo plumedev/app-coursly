@@ -10,7 +10,9 @@ import {
   updateDoc,
   Timestamp,
   onSnapshot,
-  setDoc
+  setDoc,
+  query,
+  where
 } from 'firebase/firestore'
 
 const COLLECTION_NAME = 'shoppingItems'
@@ -22,6 +24,7 @@ const COLLECTION_NAME = 'shoppingItems'
  */
 const convertFirestoreItem = (doc: import('firebase/firestore').DocumentSnapshot): IShoppingItem => {
   const data = doc.data() as {
+    listId: string
     name: string
     quantity: number
     unit?: string
@@ -31,6 +34,7 @@ const convertFirestoreItem = (doc: import('firebase/firestore').DocumentSnapshot
   }
   return {
     id: doc.id,
+    listId: data.listId,
     name: data.name,
     quantity: data.quantity,
     unit: data.unit || undefined,
@@ -46,6 +50,7 @@ const convertFirestoreItem = (doc: import('firebase/firestore').DocumentSnapshot
 export const createShoppingItem = async (item: ICreateShoppingItem): Promise<IShoppingItem> => {
   const now = Timestamp.now()
   const docRef = await addDoc(collection(db, COLLECTION_NAME), {
+    listId: item.listId,
     name: item.name,
     quantity: item.quantity,
     unit: item.unit || null,
@@ -64,10 +69,11 @@ export const createShoppingItem = async (item: ICreateShoppingItem): Promise<ISh
 }
 
 /**
- * Récupère tous les items de la liste de courses
+ * Récupère tous les items de la liste de courses pour une liste donnée
  */
-export const getShoppingItems = async (): Promise<IShoppingItem[]> => {
-  const querySnapshot = await getDocs(collection(db, COLLECTION_NAME))
+export const getShoppingItems = async (listId: string): Promise<IShoppingItem[]> => {
+  const q = query(collection(db, COLLECTION_NAME), where('listId', '==', listId))
+  const querySnapshot = await getDocs(q)
   return querySnapshot.docs.map((doc) => convertFirestoreItem(doc))
 }
 
@@ -106,11 +112,13 @@ export const deleteShoppingItem = async (id: string): Promise<void> => {
 }
 
 /**
- * Écoute les changements en temps réel sur la collection shoppingItems
+ * Écoute les changements en temps réel sur la collection shoppingItems pour une liste donnée
  */
-export const subscribeToShoppingItems = (callback: (items: IShoppingItem[]) => void): (() => void) => {
+export const subscribeToShoppingItems = (listId: string, callback: (items: IShoppingItem[]) => void): (() => void) => {
+  const q = query(collection(db, COLLECTION_NAME), where('listId', '==', listId))
+
   return onSnapshot(
-    collection(db, COLLECTION_NAME),
+    q,
     (querySnapshot) => {
       const items = querySnapshot.docs.map((doc) => convertFirestoreItem(doc))
       callback(items)
@@ -128,23 +136,22 @@ export const toggleItemChecked = async (id: string, checked: boolean): Promise<I
   return updateShoppingItem({ id, checked })
 }
 
-// Collection pour l'état du mode courses
+// Collection pour l'état du mode courses (par liste)
 const SHOPPING_MODE_COLLECTION = 'shoppingMode'
-const SHOPPING_MODE_DOC_ID = 'current'
 
 /**
- * Active ou désactive le mode courses
+ * Active ou désactive le mode courses pour une liste donnée
  */
-export const setShoppingMode = async (isActive: boolean): Promise<void> => {
-  const modeRef = doc(db, SHOPPING_MODE_COLLECTION, SHOPPING_MODE_DOC_ID)
+export const setShoppingMode = async (listId: string, isActive: boolean): Promise<void> => {
+  const modeRef = doc(db, SHOPPING_MODE_COLLECTION, listId)
   await setDoc(modeRef, { isActive, updatedAt: Timestamp.now() }, { merge: true })
 }
 
 /**
- * Récupère l'état actuel du mode courses
+ * Récupère l'état actuel du mode courses pour une liste donnée
  */
-export const getShoppingMode = async (): Promise<boolean> => {
-  const modeRef = doc(db, SHOPPING_MODE_COLLECTION, SHOPPING_MODE_DOC_ID)
+export const getShoppingMode = async (listId: string): Promise<boolean> => {
+  const modeRef = doc(db, SHOPPING_MODE_COLLECTION, listId)
   const modeSnapshot = await getDoc(modeRef)
 
   if (!modeSnapshot.exists()) {
@@ -155,10 +162,10 @@ export const getShoppingMode = async (): Promise<boolean> => {
 }
 
 /**
- * Écoute les changements en temps réel sur l'état du mode courses
+ * Écoute les changements en temps réel sur l'état du mode courses pour une liste donnée
  */
-export const subscribeToShoppingMode = (callback: (isActive: boolean) => void): (() => void) => {
-  const modeRef = doc(db, SHOPPING_MODE_COLLECTION, SHOPPING_MODE_DOC_ID)
+export const subscribeToShoppingMode = (listId: string, callback: (isActive: boolean) => void): (() => void) => {
+  const modeRef = doc(db, SHOPPING_MODE_COLLECTION, listId)
 
   return onSnapshot(
     modeRef,

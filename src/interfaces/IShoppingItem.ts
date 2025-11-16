@@ -1,5 +1,6 @@
 export interface IShoppingItem {
   id: string
+  listId: string // ID de la liste de courses à laquelle appartient cet item
   name: string
   quantity: number
   unit?: string // Optionnel : "kg", "g", "L", "ml", "unité", etc.
@@ -10,6 +11,7 @@ export interface IShoppingItem {
 
 // Interface pour créer un nouvel item (sans id et dates)
 export interface ICreateShoppingItem {
+  listId: string // ID de la liste de courses à laquelle appartient cet item
   name: string
   quantity: number
   unit?: string

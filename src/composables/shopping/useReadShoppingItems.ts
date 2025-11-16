@@ -3,12 +3,12 @@ import type { IShoppingItem } from '@/interfaces/IShoppingItem'
 import { useRequest } from '@/composables/utils/useRequest'
 import useToast from '@/composables/utils/useToast'
 
-export function useReadShoppingItems() {
+export function useReadShoppingItems(listId: string) {
   const toast = useToast()
 
   const runServices = async (): Promise<IShoppingItem[]> => {
     try {
-      const result = await getShoppingItems()
+      const result = await getShoppingItems(listId)
       return result
     } catch (error: unknown) {
       if (error instanceof Error) {
