@@ -1,12 +1,12 @@
 <template>
-  <v-container fluid class="fill-height pa-0">
+  <v-container fluid class="fill-height pa-0" style="padding-bottom: 80px;">
     <v-row no-gutters class="fill-height">
       <v-col cols="12">
         <v-container class="pa-4">
           <!-- Titre simple avec bouton dark mode -->
           <div class="d-flex align-center justify-space-between mb-4">
             <h1 class="text-h5 font-weight-bold">
-              🛒 Liste de Courses
+              🛒 {{ activeList?.name || 'Liste de Courses' }}
             </h1>
             <v-btn icon variant="text" @click="toggleTheme" :color="isDark ? 'warning' : 'primary'" size="large">
               <v-icon>{{ isDark ? mdiWeatherSunny : mdiWeatherNight }}</v-icon>
@@ -18,8 +18,13 @@
         <v-container class="fill-height pa-4 pt-0">
           <v-row justify="center" class="fill-height">
             <v-col cols="12" sm="11" md="10" lg="8" xl="6">
+              <!-- Message si aucune liste n'est sélectionnée -->
+              <v-alert v-if="!activeListId && !isLoadingLists" type="info" variant="tonal" class="mb-4 rounded-lg">
+                Aucune liste sélectionnée. Créez une nouvelle liste en utilisant la barre de navigation en bas.
+              </v-alert>
+
               <!-- Carte principale avec design moderne -->
-              <v-card class="pa-6" elevation="2" rounded="xl"
+              <v-card v-if="activeListId" class="pa-6" elevation="2" rounded="xl"
                 style="backdrop-filter: blur(10px); transition: all 0.3s ease;">
                 <!-- Section mode courses avec design amélioré -->
                 <div class="d-flex align-center justify-space-between mb-6 flex-wrap gap-3">
@@ -257,11 +262,14 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Navbar fixe en bas -->
+    <ShoppingListNavbar />
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   mdiPlus,
   mdiPencil,
@@ -284,9 +292,28 @@ import { useShoppingMode } from '@/composables/shopping/useShoppingMode'
 import { useToggleItemChecked } from '@/composables/shopping/useToggleItemChecked'
 import { useAppTheme } from '@/composables/useTheme'
 import { useUnitStore } from '@/stores/unitStore'
+import { useShoppingListStore } from '@/stores/shoppingListStore'
+import { useSubscribeToShoppingLists } from '@/composables/shopping/useSubscribeToShoppingLists'
+import ShoppingListNavbar from '@/components/ShoppingListNavbar.vue'
 
 // Thème
 const { isDark, toggleTheme } = useAppTheme()
+
+// Store de listes de courses
+const shoppingListStore = useShoppingListStore()
+const activeListId = computed(() => shoppingListStore.activeListId)
+const activeList = computed(() => shoppingListStore.activeList)
+
+// Écouter les changements de listes
+const {
+  lists,
+  isLoading: isLoadingLists
+} = useSubscribeToShoppingLists()
+
+// Mettre à jour le store quand les listes changent
+watch(lists, (newLists) => {
+  shoppingListStore.setLists(newLists)
+}, { immediate: true })
 
 // Store d'unité
 const unitStore = useUnitStore()
@@ -309,9 +336,17 @@ const unitOptions = [
 const formRef = ref()
 const editFormRef = ref()
 const form = ref<ICreateShoppingItem>({
+  listId: activeListId.value || '',
   name: '',
   quantity: 1,
   unit: unitStore.preferredUnit || ''
+})
+
+// Mettre à jour le listId du formulaire quand la liste active change
+watch(activeListId, (newListId) => {
+  if (form.value) {
+    form.value.listId = newListId || ''
+  }
 })
 
 const editDialog = ref(false)
@@ -337,7 +372,7 @@ const {
   isLoading,
   isError,
   errorMessage
-} = useSubscribeToShoppingItems()
+} = useSubscribeToShoppingItems(activeListId)
 
 const {
   isLoading: isUpdating,
@@ -352,7 +387,7 @@ const {
 const {
   isShoppingModeActive,
   toggleShoppingMode
-} = useShoppingMode()
+} = useShoppingMode(activeListId)
 
 const {
   doRequest: toggleChecked
@@ -402,11 +437,16 @@ const toggleSelectItem = (id: string) => {
 }
 
 const handleSubmit = async () => {
+  if (!activeListId.value) {
+    return
+  }
+
   const { valid } = await formRef.value.validate()
   if (!valid) return
 
   try {
     await createItem({
+      listId: activeListId.value,
       name: form.value.name.trim(),
       quantity: form.value.quantity,
       unit: form.value.unit?.trim() || undefined
@@ -414,6 +454,7 @@ const handleSubmit = async () => {
 
     // Réinitialiser le formulaire avec l'unité préférée
     form.value = {
+      listId: activeListId.value,
       name: '',
       quantity: 1,
       unit: unitStore.preferredUnit || ''
