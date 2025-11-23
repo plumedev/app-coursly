@@ -15,7 +15,7 @@
         </v-container>
       </v-col>
       <v-col cols="12">
-        <v-container class="fill-height pa-4 pt-0">
+        <v-container class="fill-height pa-2 pt-0">
           <v-row justify="center" class="fill-height">
             <v-col cols="12" sm="11" md="10" lg="8" xl="6">
               <!-- Message si aucune liste n'est sélectionnée -->
@@ -24,7 +24,7 @@
               </v-alert>
 
               <!-- Carte principale avec design moderne -->
-              <v-card v-if="activeListId" class="pa-6 mb-16" elevation="2" rounded="xl"
+              <v-card v-if="activeListId" class="pa-4 mb-16" elevation="2" rounded="xl"
                 style="backdrop-filter: blur(10px); transition: all 0.3s ease;">
                 <!-- Section mode courses avec design amélioré -->
                 <div class="d-flex align-center justify-space-between mb-6 flex-wrap gap-3">
@@ -68,6 +68,11 @@
                             :hint="preferredUnit ? `Unité par défaut: ${preferredUnit}` : 'Optionnel'"
                             persistent-hint />
                         </v-col>
+                        <v-col cols="12">
+                          <v-textarea v-model="form.comment" label="Commentaire (optionnel)" variant="outlined"
+                            density="comfortable" rounded="lg" prepend-inner-icon="mdi-comment-outline" rows="2"
+                            auto-grow hint="Ajoutez une note ou un commentaire sur cet item" persistent-hint />
+                        </v-col>
                       </v-row>
 
                       <v-btn type="submit" :loading="isCreating" color="primary" size="large" block class="mt-2"
@@ -103,7 +108,7 @@
 
                   <!-- Liste moderne avec cartes -->
                   <div v-if="items && items.length > 0" class="mb-4">
-                    <v-card v-for="item in items" :key="item.id" class="mb-3 pa-4 rounded-lg" variant="outlined"
+                    <v-card v-for="item in items" :key="item.id" class="mb-3 px-1 py-2 rounded-lg" variant="outlined"
                       :class="{ 'border-primary': selectedItems.includes(item.id) }"
                       style="transition: all 0.2s ease; cursor: pointer;" @click="toggleSelectItem(item.id)">
                       <div class="d-flex align-center">
@@ -116,6 +121,10 @@
                           </div>
                           <div class="text-body-2 text-medium-emphasis">
                             {{ formatQuantity(item) }}
+                          </div>
+                          <div v-if="item.comment" class="text-body-2 text-medium-emphasis mt-1"
+                            style="font-style: italic;">
+                            💬 {{ item.comment }}
                           </div>
                         </div>
                         <div class="d-flex gap-2">
@@ -176,6 +185,10 @@
                           <div class="text-body-2 text-medium-emphasis">
                             {{ formatQuantity(item) }}
                           </div>
+                          <div v-if="item.comment" class="text-body-2 text-medium-emphasis mt-1"
+                            style="font-style: italic;">
+                            💬 {{ item.comment }}
+                          </div>
                         </div>
                       </div>
                     </v-card>
@@ -212,6 +225,10 @@
                             </div>
                             <div class="text-body-2 text-medium-emphasis">
                               {{ formatQuantity(item) }}
+                            </div>
+                            <div v-if="item.comment" class="text-body-2 text-medium-emphasis mt-1"
+                              style="font-style: italic;">
+                              💬 {{ item.comment }}
                             </div>
                           </div>
                         </div>
@@ -252,7 +269,11 @@
               prepend-inner-icon="mdi-numeric" />
 
             <v-select v-model="editForm.unit" :items="unitOptions" label="Unité" variant="outlined" rounded="lg"
-              prepend-inner-icon="mdi-scale-balance" hint="Optionnel" persistent-hint />
+              class="mb-4" prepend-inner-icon="mdi-scale-balance" hint="Optionnel" persistent-hint />
+
+            <v-textarea v-model="editForm.comment" label="Commentaire (optionnel)" variant="outlined" rounded="lg"
+              prepend-inner-icon="mdi-comment-outline" rows="2" auto-grow
+              hint="Ajoutez une note ou un commentaire sur cet item" persistent-hint />
           </v-form>
         </v-card-text>
 
@@ -380,7 +401,8 @@ const form = ref<ICreateShoppingItem>({
   listId: activeListId.value || '',
   name: '',
   quantity: 1,
-  unit: unitStore.preferredUnit || ''
+  unit: unitStore.preferredUnit || '',
+  comment: ''
 })
 
 // Mettre à jour le listId du formulaire quand la liste active change
@@ -395,7 +417,8 @@ const editForm = ref<IUpdateShoppingItem>({
   id: '',
   name: '',
   quantity: 1,
-  unit: ''
+  unit: '',
+  comment: ''
 })
 
 // Sélection multiple
@@ -498,7 +521,8 @@ const handleSubmit = async () => {
       listId: activeListId.value,
       name: form.value.name.trim(),
       quantity: form.value.quantity,
-      unit: form.value.unit?.trim() || undefined
+      unit: form.value.unit?.trim() || undefined,
+      comment: form.value.comment?.trim() || undefined
     })
 
     // Réinitialiser le formulaire avec l'unité préférée
@@ -506,7 +530,8 @@ const handleSubmit = async () => {
       listId: activeListId.value,
       name: '',
       quantity: 1,
-      unit: unitStore.preferredUnit || ''
+      unit: unitStore.preferredUnit || '',
+      comment: ''
     }
     formRef.value.resetValidation()
   } catch (error: unknown) {
@@ -538,7 +563,8 @@ const startEdit = (item: IShoppingItem) => {
     id: item.id,
     name: item.name,
     quantity: item.quantity,
-    unit: item.unit || ''
+    unit: item.unit || '',
+    comment: item.comment || ''
   }
   editDialog.value = true
 }
@@ -552,7 +578,8 @@ const handleUpdate = async () => {
       id: editForm.value.id,
       name: editForm.value.name?.trim(),
       quantity: editForm.value.quantity,
-      unit: editForm.value.unit?.trim() || undefined
+      unit: editForm.value.unit?.trim() || undefined,
+      comment: editForm.value.comment?.trim() || undefined
     })
 
     editDialog.value = false

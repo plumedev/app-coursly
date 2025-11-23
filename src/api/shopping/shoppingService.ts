@@ -28,6 +28,7 @@ const convertFirestoreItem = (doc: import('firebase/firestore').DocumentSnapshot
     name: string
     quantity: number
     unit?: string
+    comment?: string
     checked?: boolean
     createdAt?: { toDate: () => Date }
     updatedAt?: { toDate: () => Date }
@@ -38,6 +39,7 @@ const convertFirestoreItem = (doc: import('firebase/firestore').DocumentSnapshot
     name: data.name,
     quantity: data.quantity,
     unit: data.unit || undefined,
+    comment: data.comment || undefined,
     checked: data.checked || false,
     createdAt: data.createdAt?.toDate() || new Date(),
     updatedAt: data.updatedAt?.toDate() || new Date()
@@ -54,6 +56,7 @@ export const createShoppingItem = async (item: ICreateShoppingItem): Promise<ISh
     name: item.name,
     quantity: item.quantity,
     unit: item.unit || null,
+    comment: item.comment || null,
     createdAt: now,
     updatedAt: now
   })
@@ -89,6 +92,7 @@ export const updateShoppingItem = async (item: IUpdateShoppingItem): Promise<ISh
   if (item.name !== undefined) updateData.name = item.name
   if (item.quantity !== undefined) updateData.quantity = item.quantity
   if (item.unit !== undefined) updateData.unit = item.unit || null
+  if (item.comment !== undefined) updateData.comment = item.comment || null
   if (item.checked !== undefined) updateData.checked = item.checked
 
   await updateDoc(itemRef, updateData)
